@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
+<nta>
+	<declaration>// Paste generated declaration file
+const int NUM_CB = 4;    // user param
+const int NUM_CB_GROUP = 1;    // user param
+const int NUM_THREAD = 1;    // user param
+const int MAX_CYCLE = 1;    // user param
+
+typedef int[0, NUM_CB-1] CbId;
+typedef int[0, NUM_CB_GROUP-1] GroupId;
+typedef int[0, NUM_THREAD-1] ThreadId;
+
+typedef int[0, 3] CbType;
+const CbType TMR = 0;
+const CbType SUB = 1;
+const CbType SRV = 2;
+const CbType CLT = 3;
+
+typedef int[0, 1] GroupType;
+const GroupType REENTRANT = 0;
+const GroupType EXCLUSIVE = 1;
+
+const GroupId cb_group_table[NUM_CB] = {0, 0, 0, 0};    // user param
+const CbType cb_type_table[NUM_CB] = {TMR, TMR, SUB, SUB};    // user param
+
+
+// Callback group 
+bool group_closed[NUM_CB_GROUP];
+chan group_close[NUM_CB_GROUP];
+chan group_open[NUM_CB_GROUP];
+
+// Callback 
+bool ready_set[NUM_CB];
+
+// Thread
+chan cb_assign_signal[NUM_THREAD];
+broadcast chan thread_free;
+// int[0, NUM_THREAD] num_running_thread;
+
+bool thread_running[NUM_THREAD];
+CbId thread_cb_assign_table[NUM_THREAD];
+
+bool cb_running(CbId cb_id){
+    int t_id;
+    for (t_id = 0; t_id &lt; NUM_THREAD; t_id++){
+        if (thread_running[t_id]){
+            if (thread_cb_assign_table[t_id] == cb_id){
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+CbId get_thread_running_cb(ThreadId t_id){
+    return thread_cb_assign_table[t_id];
+}
+
+GroupId get_thread_running_group(ThreadId t_id){
+    return cb_group_table[thread_cb_assign_table[t_id]];
+}</declaration>
+	<template>
+		<name x="5" y="5">Callback</name>
+		<parameter>const CbId id</parameter>
+		<declaration>// Place local declarations here.
+int[0, MAX_CYCLE] cycle_count;</declaration>
+		<location id="id0" x="-1020" y="-952">
+			<name x="-1079" y="-961">wait</name>
+		</location>
+		<location id="id1" x="-1020" y="-867">
+			<name x="-1088" y="-875">ready</name>
+		</location>
+		<init ref="id0"/>
+		<transition id="id2">
+			<source ref="id1"/>
+			<target ref="id0"/>
+			<label kind="assignment" x="-986" y="-926">ready_set[id]=false</label>
+			<nail x="-986" y="-909"/>
+		</transition>
+		<transition id="id3">
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="guard" x="-1258" y="-935">cycle_count&lt;MAX_CYCLE</label>
+			<label kind="assignment" x="-1258" y="-918">ready_set[id]=true,
+cycle_count=cycle_count+1</label>
+			<nail x="-1054" y="-909"/>
+		</transition>
+	</template>
+	<template>
+		<name>Thread</name>
+		<parameter>const ThreadId id</parameter>
+		<declaration>CbId my_cb_id;
+GroupId my_cb_group_id;
+
+void check_assigned_cb_id(){
+    my_cb_id = thread_cb_assign_table[id];
+    my_cb_group_id = cb_group_table[my_cb_id];
+}
+
+
+void start_run(){
+    thread_running[id] = true;
+//    num_running_thread = num_running_thread + 1;
+}
+
+void end_run(){
+    my_cb_id = 0;
+    my_cb_group_id = 0;
+    
+    thread_running[id] = false;
+//    num_running_thread = num_running_thread - 1;
+}</declaration>
+		<location id="id4" x="-1241" y="-807">
+			<name x="-1300" y="-816">wait</name>
+		</location>
+		<location id="id5" x="-739" y="-799">
+			<name x="-713" y="-808">running</name>
+			<urgent/>
+		</location>
+		<location id="id6" x="-1020" y="-841">
+			<committed/>
+		</location>
+		<location id="id7" x="-1020" y="-765">
+			<committed/>
+		</location>
+		<init ref="id4"/>
+		<transition id="id8">
+			<source ref="id5"/>
+			<target ref="id7"/>
+			<label kind="synchronisation" x="-994" y="-807">group_open[my_cb_group_id]!</label>
+			<label kind="assignment" x="-993" y="-790">thread_running[id]=false</label>
+			<nail x="-739" y="-765"/>
+		</transition>
+		<transition id="id9">
+			<source ref="id6"/>
+			<target ref="id5"/>
+			<label kind="synchronisation" x="-994" y="-884">group_close[my_cb_group_id]!</label>
+			<label kind="assignment" x="-994" y="-867">thread_running[id]=true</label>
+			<nail x="-739" y="-841"/>
+		</transition>
+		<transition id="id10">
+			<source ref="id7"/>
+			<target ref="id4"/>
+			<label kind="synchronisation" x="-1224" y="-790">thread_free!</label>
+			<nail x="-1241" y="-765"/>
+		</transition>
+		<transition id="id11">
+			<source ref="id4"/>
+			<target ref="id6"/>
+			<label kind="synchronisation" x="-1224" y="-884">cb_assign_signal[id]?</label>
+			<label kind="assignment" x="-1223" y="-866">check_assigned_cb_id()</label>
+			<nail x="-1241" y="-841"/>
+		</transition>
+	</template>
+	<template>
+		<name>CallbackGroup</name>
+		<parameter>const GroupType group_type, const GroupId id</parameter>
+		<location id="id12" x="-986" y="-246">
+			<name x="-1045" y="-254">open</name>
+		</location>
+		<location id="id13" x="-986" y="-144">
+			<name x="-1045" y="-153">close</name>
+		</location>
+		<init ref="id12"/>
+		<transition id="id14">
+			<source ref="id12"/>
+			<target ref="id12"/>
+			<label kind="guard" x="-926" y="-314">group_type==REENTRANT</label>
+			<label kind="synchronisation" x="-926" y="-297">group_open[id]?</label>
+			<label kind="assignment" x="-926" y="-280">group_closed[id]=false</label>
+			<nail x="-969" y="-322"/>
+			<nail x="-935" y="-280"/>
+		</transition>
+		<transition id="id15">
+			<source ref="id12"/>
+			<target ref="id12"/>
+			<label kind="guard" x="-1224" y="-314">group_type==REENTRANT</label>
+			<label kind="synchronisation" x="-1224" y="-297">group_close[id]?</label>
+			<label kind="assignment" x="-1224" y="-280">group_closed[id]=false</label>
+			<nail x="-1003" y="-322"/>
+			<nail x="-1037" y="-280"/>
+		</transition>
+		<transition id="id16">
+			<source ref="id13"/>
+			<target ref="id12"/>
+			<label kind="guard" x="-926" y="-220">group_type==EXCLUSIVE</label>
+			<label kind="synchronisation" x="-926" y="-203">group_open[id]?</label>
+			<label kind="assignment" x="-926" y="-186">group_closed[id]=false</label>
+			<nail x="-935" y="-195"/>
+		</transition>
+		<transition id="id17">
+			<source ref="id12"/>
+			<target ref="id13"/>
+			<label kind="guard" x="-1224" y="-221">group_type==EXCLUSIVE</label>
+			<label kind="synchronisation" x="-1224" y="-204">group_close[id]?</label>
+			<label kind="assignment" x="-1224" y="-187">group_closed[id]=true</label>
+			<nail x="-1037" y="-195"/>
+		</transition>
+	</template>
+	<template>
+		<name>Executor</name>
+		<declaration>bool ready_set_copy[NUM_CB];
+CbId cur_cb_id = 0;
+ThreadId cur_thread_id = 0;
+
+
+void copy_ready_set(){
+    ready_set_copy = ready_set;
+}
+
+bool check_cb_ready_open(CbId cb_id){
+    if (cb_type_table[cb_id] == TMR){
+        if (ready_set[cb_id]) {
+            if (!group_closed[cb_group_table[cb_id]]){
+                return true;
+            }
+        }
+        return false;
+    }
+    else{
+        if (ready_set_copy[cb_id]) {
+            if (!group_closed[cb_group_table[cb_id]]){
+                return true;
+            }
+        }
+        return false;
+    }    
+}
+
+bool any_waiting_thread(){
+    int t_id;
+    for (t_id = 0; t_id &lt; NUM_THREAD; t_id++) {
+        if (!thread_running[t_id]){
+            return true;
+        }
+    }
+    return false;
+}
+
+ThreadId get_waiting_thread_id(){
+    int t_id;
+    for (t_id = 0; t_id &lt; NUM_THREAD; t_id++) {
+        if (!thread_running[t_id]){
+            return t_id;
+        }
+    }
+    return 0;
+}
+
+void submit_cb(CbId submit_cb_id, ThreadId submit_thread_id){
+    thread_cb_assign_table[submit_thread_id] = submit_cb_id;
+}
+
+void assign_cur_cb_to_cur_thread(){
+    thread_cb_assign_table[cur_thread_id] = cur_cb_id;
+}</declaration>
+		<location id="id18" x="-1139" y="-1351">
+			<name x="-1113" y="-1359">polling</name>
+			<urgent/>
+		</location>
+		<location id="id19" x="-1139" y="-986">
+			<name x="-1113" y="-994">pick_cb</name>
+			<urgent/>
+		</location>
+		<location id="id20" x="-1139" y="-1208">
+			<name x="-1258" y="-1216">pick_thread</name>
+			<urgent/>
+		</location>
+		<location id="id21" x="-1139" y="-1089">
+			<name x="-1258" y="-1097">wait_thread</name>
+		</location>
+		<location id="id22" x="-1139" y="-842">
+			<name x="-1181" y="-833">execute_cb</name>
+			<urgent/>
+		</location>
+		<location id="id23" x="-1428" y="-986">
+			<name x="-1411" y="-977">next_cb</name>
+			<committed/>
+		</location>
+		<location id="id24" x="-1139" y="-1258">
+			<name x="-1275" y="-1266">schedule_start</name>
+			<committed/>
+		</location>
+		<init ref="id18"/>
+		<transition id="id25">
+			<source ref="id24"/>
+			<target ref="id20"/>
+		</transition>
+		<transition id="id26">
+			<source ref="id19"/>
+			<target ref="id23"/>
+			<label kind="guard" x="-1411" y="-927">!check_cb_ready_open(cur_cb_id)</label>
+			<nail x="-1198" y="-935"/>
+			<nail x="-1428" y="-935"/>
+		</transition>
+		<transition id="id27">
+			<source ref="id22"/>
+			<target ref="id20"/>
+			<label kind="guard" x="-1071" y="-833">cur_cb_id&lt;NUM_CB-1</label>
+			<label kind="assignment" x="-1071" y="-817">cur_cb_id=cur_cb_id+1</label>
+			<nail x="-748" y="-841"/>
+			<nail x="-748" y="-1206"/>
+		</transition>
+		<transition id="id28">
+			<source ref="id22"/>
+			<target ref="id18"/>
+			<label kind="guard" x="-1360" y="-833">cur_cb_id==NUM_CB-1</label>
+			<nail x="-1504" y="-841"/>
+			<nail x="-1504" y="-1350"/>
+		</transition>
+		<transition id="id29">
+			<source ref="id23"/>
+			<target ref="id18"/>
+			<label kind="guard" x="-1419" y="-1147">cur_cb_id==NUM_CB-1</label>
+			<nail x="-1428" y="-1351"/>
+		</transition>
+		<transition id="id30">
+			<source ref="id23"/>
+			<target ref="id19"/>
+			<label kind="guard" x="-1377" y="-1028">cur_cb_id&lt;NUM_CB-1</label>
+			<label kind="assignment" x="-1377" y="-1011">cur_cb_id=cur_cb_id+1</label>
+		</transition>
+		<transition id="id31">
+			<source ref="id18"/>
+			<target ref="id24"/>
+			<label kind="assignment" x="-1122" y="-1325">copy_ready_set(),
+cur_cb_id=0</label>
+		</transition>
+		<transition id="id32">
+			<source ref="id20"/>
+			<target ref="id19"/>
+			<label kind="guard" x="-1105" y="-1199">any_waiting_thread()</label>
+			<label kind="assignment" x="-1105" y="-1182">cur_thread_id=get_waiting_thread_id()</label>
+			<nail x="-1113" y="-1157"/>
+			<nail x="-773" y="-1157"/>
+			<nail x="-773" y="-1012"/>
+			<nail x="-1105" y="-1012"/>
+		</transition>
+		<transition id="id33">
+			<source ref="id21"/>
+			<target ref="id19"/>
+			<label kind="synchronisation" x="-1122" y="-1072">thread_free?</label>
+			<label kind="assignment" x="-1122" y="-1055">cur_thread_id=get_waiting_thread_id()</label>
+		</transition>
+		<transition id="id34">
+			<source ref="id20"/>
+			<target ref="id21"/>
+			<label kind="guard" x="-1130" y="-1140">!any_waiting_thread()</label>
+		</transition>
+		<transition id="id35">
+			<source ref="id19"/>
+			<target ref="id22"/>
+			<label kind="guard" x="-1122" y="-961">check_cb_ready_open(cur_cb_id)</label>
+			<label kind="synchronisation" x="-1122" y="-935">cb_assign_signal[cur_thread_id]!</label>
+			<label kind="assignment" x="-1122" y="-918">assign_cur_cb_to_cur_thread()</label>
+		</transition>
+	</template>
+	<system>// Paste generated system file</system>
+	<queries>
+		<option key="--hashtable-size" value="32"/>
+		<option key="--diagnostic" value="1"/>
+		<query>
+			<formula/>
+			<comment>Import generated query file</comment>
+		</query>
+	</queries>
+</nta>

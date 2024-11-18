@@ -1,0 +1,30 @@
+node:
+  name: "example_node1"
+  
+  callbacks:
+    - name: "TMR1"
+      type: "TMR"
+      callback_group: "RGroup1"
+    - name: "SUB1"
+      type: "SUB"
+      callback_group: "RGroup1"
+    - name: "SRV1"
+      type: "SRV"
+      callback_group: "MEGroup1"
+    - name: "CLT1"
+      type: "CLT"
+      callback_group: "MEGroup1"
+  
+  callback_groups:
+    - name: "RGroup1"
+      type: "REENTRANT"
+    - name: "MEGroup1"
+      type: "EXCLUSIVE"
+      
+  executor:
+    name: "executor"
+    threads:
+      - name: "thread0"
+      - name: "thread1"
+      - name: "thread2"
+      - name: "thread3"
