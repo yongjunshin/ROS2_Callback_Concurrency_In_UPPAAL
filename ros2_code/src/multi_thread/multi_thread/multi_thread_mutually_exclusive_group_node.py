@@ -19,7 +19,7 @@ class MultiThreadMutuallyExclusiveGroupNode(Node):
         self.msg_B_publisher = self.create_publisher(String, 'msg_B', qos_profile)
         
         self.timer_A = self.create_timer(1, self.publish_msg_A, callback_group=self.mutually_exclusive_group)
-        self.timer_B = self.create_timer(2, self.publish_msg_B, callback_group=self.mutually_exclusive_group)
+        self.timer_B = self.create_timer(1, self.publish_msg_B, callback_group=self.mutually_exclusive_group)
 
         self.short_msg_subscriber = self.create_subscription(
             String, 
