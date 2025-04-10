@@ -1,14 +1,15 @@
 # ROS2_Callback_Concurrency_In_UPPAAL
 
-This repository contains the artifacts related to our research titled "Verifying ROS 2 Callback Concurrency Using UPPAAL Model Checker" (under review). 
+This repository contains the artifacts related to our research titled "Modeling and Verification of ROS 2 Callback Concurrency Using UPPAAL Model Checker" (under review). 
 
 It includes UPPAAL model templates, an automated model generation tool, and ROS 2 Python implementations of representative cases of callback concurrency configurations.
 
 
 ## Contact
-⚠️ **This repository is not hosted by the authors because the paper is under double-blinded review.** ⚠️ 
 
-The repository will be moved to a permanent location after the review process. 
+Dr. Yong-Jun Shin
+Electronics and Telecommunications Research Institute, South Korea
+yjshin@etri.re.kr
 
 
 ## Repository Structure
