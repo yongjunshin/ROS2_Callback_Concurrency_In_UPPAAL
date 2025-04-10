@@ -8,7 +8,9 @@ It includes UPPAAL model templates, an automated model generation tool, and ROS 
 ## Contact
 
 Dr. Yong-Jun Shin
+
 Electronics and Telecommunications Research Institute, South Korea
+
 yjshin@etri.re.kr
 
 
